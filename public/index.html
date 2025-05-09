@@ -113,7 +113,7 @@ function renderBatches() {
 
 async function loadBatches() {
   document.getElementById('batchLoader').classList.remove('hidden');
-  const res = await fetch('/data');
+  const res = await fetch('/data.json');
   const json = await res.json();
   allBatches = Object.entries(json.batches).map(([key, val]) => ({ key, ...val }));
   renderBatches();
