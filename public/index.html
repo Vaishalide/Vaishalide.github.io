@@ -95,13 +95,13 @@ function renderBatches() {
 
   const end = batchOffset + batchLimit;
   const slice = allBatches.slice(batchOffset, end);
-  slice.forEach(data.json => {
+  slice.forEach(data => {
     const div = document.createElement('div');
     div.className = 'card';
-    div.innerHTML = `<img src="${data.json.image}" alt="${data.json.name}"><div class="card-title">${data.json.name}</div>`;
+    div.innerHTML = `<img src="${data.image}" alt="${data.name}"><div class="card-title">${data.name}</div>`;
     div.onclick = () => {
       prevState.push(currentView);
-      loadSubjects(data.json.key);
+      loadSubjects(data.key);
     };
     main.appendChild(div);
   });
@@ -268,15 +268,15 @@ document.addEventListener('contextmenu', event => event.preventDefault());
 <script>
 fetch('/data.json')
   .then(response => response.json())
-  .then(data.json => {
-    if (data.json.popup && data.json.popup.show) {
-      document.getElementById('popupImage').src = data.json.popup.image;
-      document.getElementById('popupText').textContent = data.json.popup.text;
-      document.getElementById('popupLink').href = data.json.popup.link;
+  .then(data => {
+    if (data.popup && data.popup.show) {
+      document.getElementById('popupImage').src = data.popup.image;
+      document.getElementById('popupText').textContent = data.popup.text;
+      document.getElementById('popupLink').href = data.popup.link;
       document.getElementById('popup').style.display = 'block';
     }
   })
-  .catch(error => console.error('Error loading popup data.json:', error));
+  .catch(error => console.error('Error loading popup data:', error));
 </script>
 
 </body>
