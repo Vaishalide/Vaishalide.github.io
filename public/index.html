@@ -114,7 +114,7 @@
 
     async function loadBatches() {
       document.getElementById('batchLoader').classList.remove('hidden');
-      const res = await fetch('./data.json');
+      const res = await fetch('/data.json');
       const json = await res.json();
       jsonData = json;
 
