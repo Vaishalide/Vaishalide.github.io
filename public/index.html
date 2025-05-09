@@ -95,13 +95,13 @@ function renderBatches() {
 
   const end = batchOffset + batchLimit;
   const slice = allBatches.slice(batchOffset, end);
-  slice.forEach(data => {
+  slice.forEach(data.json.json.json.json.json.json.json => {
     const div = document.createElement('div');
     div.className = 'card';
-    div.innerHTML = `<img src="${data.image}" alt="${data.name}"><div class="card-title">${data.name}</div>`;
+    div.innerHTML = `<img src="${data.json.json.json.json.json.json.json.image}" alt="${data.json.json.json.json.json.json.json.name}"><div class="card-title">${data.json.json.json.json.json.json.json.name}</div>`;
     div.onclick = () => {
       prevState.push(currentView);
-      loadSubjects(data.key);
+      loadSubjects(data.json.json.json.json.json.json.json.key);
     };
     main.appendChild(div);
   });
@@ -113,7 +113,7 @@ function renderBatches() {
 
 async function loadBatches() {
   document.getElementById('batchLoader').classList.remove('hidden');
-  const res = await fetch('/data.json');
+  const res = await fetch('/data.json.json.json.json.json.json.json.json');
   const json = await res.json();
   allBatches = Object.entries(json.batches).map(([key, val]) => ({ key, ...val }));
   renderBatches();
@@ -124,7 +124,7 @@ async function loadSubjects(batchId) {
   showView('subjects');
   subjectsDiv.innerHTML = '';
 
-  const res = await fetch(`/data/batches/${batchId}/subjects`);
+  const res = await fetch(`/data.json.json.json.json.json.json.json/batches/${batchId}/subjects`);
   const subjects = await res.json();
 
   document.getElementById('subjectLoader').classList.add('hidden');
@@ -145,7 +145,7 @@ async function loadTopics(batchId, subjectId) {
   showView('topics');
   topicsDiv.innerHTML = '';
 
-  const res = await fetch(`/data/batches/${batchId}/subjects/${subjectId}/topics`);
+  const res = await fetch(`/data.json.json.json.json.json.json.json/batches/${batchId}/subjects/${subjectId}/topics`);
   const topics = await res.json();
 
   const topicButtonsContainer = document.createElement('div');
@@ -266,17 +266,17 @@ document.addEventListener('contextmenu', event => event.preventDefault());
 </div>
 
 <script>
-fetch('/data.json')
+fetch('/data.json.json.json.json.json.json.json.json')
   .then(response => response.json())
-  .then(data => {
-    if (data.popup && data.popup.show) {
-      document.getElementById('popupImage').src = data.popup.image;
-      document.getElementById('popupText').textContent = data.popup.text;
-      document.getElementById('popupLink').href = data.popup.link;
+  .then(data.json.json.json.json.json.json.json => {
+    if (data.json.json.json.json.json.json.json.popup && data.json.json.json.json.json.json.json.popup.show) {
+      document.getElementById('popupImage').src = data.json.json.json.json.json.json.json.popup.image;
+      document.getElementById('popupText').textContent = data.json.json.json.json.json.json.json.popup.text;
+      document.getElementById('popupLink').href = data.json.json.json.json.json.json.json.popup.link;
       document.getElementById('popup').style.display = 'block';
     }
   })
-  .catch(error => console.error('Error loading popup data:', error));
+  .catch(error => console.error('Error loading popup data.json.json.json.json.json.json.json:', error));
 </script>
 
 </body>
