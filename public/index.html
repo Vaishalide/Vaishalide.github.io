@@ -114,7 +114,7 @@
 
     async function loadBatches() {
       document.getElementById('batchLoader').classList.remove('hidden');
-      const res = await fetch('/data.json');
+      const res = await fetch('./data.json');
       const json = await res.json();
       jsonData = json;
 
@@ -127,7 +127,13 @@
       showView('subjects');
       subjectsDiv.innerHTML = '';
 
-      const subjects = jsonData.batches[batchId].subjects;
+      const batch = jsonData.batches[batchId];
+      if (!batch || !batch.subjects) {
+        subjectsDiv.innerHTML = '<p>No subjects found for this batch.</p>';
+        return;
+      }
+
+      const subjects = batch.subjects;
 
       document.getElementById('subjectLoader').classList.add('hidden');
       subjects.forEach(subject => {
@@ -148,11 +154,14 @@
       topicsDiv.innerHTML = '';
 
       const subject = jsonData.batches[batchId].subjects.find(s => s.key === subjectId);
-      const topics = subject.topics;
+      if (!subject || !subject.topics) {
+        topicsDiv.innerHTML = '<p>No topics found for this subject.</p>';
+        return;
+      }
 
+      const topics = subject.topics;
       const topicButtonsContainer = document.createElement('div');
       topicButtonsContainer.className = 'grid';
-
       const topicContent = document.createElement('div');
       topicContent.className = 'section';
 
