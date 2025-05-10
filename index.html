@@ -55,185 +55,229 @@
 <div class="grid hidden" id="subjects"></div>
 <div class="section hidden" id="topics"></div>
 
-  <script>
-    let batchOffset = 0;
-    const batchLimit = 10;
-    let allBatches = [];
-    let isLoading = false;
-    let jsonData = null;
+<script>
+let batchOffset = 0;
+const batchLimit = 10;
+let allBatches = [];
+let isLoading = false;
 
-    const main = document.getElementById('main');
-    const subjectsDiv = document.getElementById('subjects');
-    const topicsDiv = document.getElementById('topics');
-    const backBtn = document.getElementById('backBtn');
-    const searchBarWrapper = document.getElementById('searchBarWrapper');
+const main = document.getElementById('main');
+const subjectsDiv = document.getElementById('subjects');
+const topicsDiv = document.getElementById('topics');
+const backBtn = document.getElementById('backBtn');
+const searchBarWrapper = document.getElementById('searchBarWrapper');
 
-    let currentView = 'main';
-    let prevState = [];
+let currentView = 'main';
+let prevState = [];
 
-    function showView(view) {
-      main.classList.add('hidden');
-      subjectsDiv.classList.add('hidden');
-      topicsDiv.classList.add('hidden');
-      searchBarWrapper.style.display = view === 'main' ? '' : 'none';
+function showView(view) {
+  main.classList.add('hidden');
+  subjectsDiv.classList.add('hidden');
+  topicsDiv.classList.add('hidden');
+  searchBarWrapper.style.display = view === 'main' ? '' : 'none';
 
-      if (view === 'main') main.classList.remove('hidden');
-      else if (view === 'subjects') subjectsDiv.classList.remove('hidden');
-      else if (view === 'topics') topicsDiv.classList.remove('hidden');
+  if (view === 'main') main.classList.remove('hidden');
+  else if (view === 'subjects') subjectsDiv.classList.remove('hidden');
+  else if (view === 'topics') topicsDiv.classList.remove('hidden');
 
-      backBtn.classList.toggle('hidden', view === 'main');
-      currentView = view;
-    }
+  backBtn.classList.toggle('hidden', view === 'main');
+  currentView = view;
+}
 
-    backBtn.onclick = () => {
-      const lastView = prevState.pop();
-      if (lastView) showView(lastView);
+backBtn.onclick = () => {
+  const lastView = prevState.pop();
+  if (lastView) showView(lastView);
+};
+
+function renderBatches() {
+  if (isLoading) return;
+  isLoading = true;
+
+  const end = batchOffset + batchLimit;
+  const slice = allBatches.slice(batchOffset, end);
+  slice.forEach(data => {
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.innerHTML = `<img src="${data.image}" alt="${data.name}"><div class="card-title">${data.name}</div>`;
+    div.onclick = () => {
+      prevState.push(currentView);
+      loadSubjects(data.key);
     };
+    main.appendChild(div);
+  });
 
-    function renderBatches() {
-      if (isLoading) return;
-      isLoading = true;
+  batchOffset = end;
+  isLoading = false;
+  document.getElementById('batchLoader').classList.add('hidden');
+}
 
-      const end = batchOffset + batchLimit;
-      const slice = allBatches.slice(batchOffset, end);
-      slice.forEach(data => {
-        const div = document.createElement('div');
-        div.className = 'card';
-        div.innerHTML = `<img src="${data.image}" alt="${data.name}"><div class="card-title">${data.name}</div>`;
-        div.onclick = () => {
-          prevState.push(currentView);
-          loadSubjects(data.key);
-        };
-        main.appendChild(div);
-      });
+async function loadBatches() {
+  document.getElementById('batchLoader').classList.remove('hidden');
+  const res = await fetch('https://physicswallahapi.onrender.com/api/batches');
+  const json = await res.json();
+  allBatches = Object.entries(json.batches).map(([key, val]) => ({ key, ...val }));
+  renderBatches();
+}
 
-      batchOffset = end;
-      isLoading = false;
-      document.getElementById('batchLoader').classList.add('hidden');
-    }
+async function loadSubjects(batchId) {
+  document.getElementById('subjectLoader').classList.remove('hidden');
+  showView('subjects');
+  subjectsDiv.innerHTML = '';
 
-    async function loadBatches() {
-      document.getElementById('batchLoader').classList.remove('hidden');
-      const res = await fetch('/data.json');
-      const json = await res.json();
-      jsonData = json;
+  const res = await fetch(`https://physicswallahapi.onrender.com/api/batches/${batchId}/subjects`);
+  const subjects = await res.json();
 
-      allBatches = Object.entries(json.batches).map(([key, val]) => ({ key, ...val }));
-      renderBatches();
-    }
+  document.getElementById('subjectLoader').classList.add('hidden');
+  subjects.forEach(subject => {
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.innerHTML = `<div class="card-title">${subject.name}</div>`;
+    div.onclick = () => {
+      prevState.push(currentView);
+      loadTopics(batchId, subject.key);
+    };
+    subjectsDiv.appendChild(div);
+  });
+}
 
-    async function loadSubjects(batchId) {
-      document.getElementById('subjectLoader').classList.remove('hidden');
-      showView('subjects');
-      subjectsDiv.innerHTML = '';
+async function loadTopics(batchId, subjectId) {
+  document.getElementById('topicLoader').classList.remove('hidden');
+  showView('topics');
+  topicsDiv.innerHTML = '';
 
-      const batch = jsonData.batches[batchId];
-      if (!batch || !batch.subjects) {
-        subjectsDiv.innerHTML = '<p>No subjects found for this batch.</p>';
-        return;
+  const res = await fetch(`https://physicswallahapi.onrender.com/api/batches/${batchId}/subjects/${subjectId}/topics`);
+  const topics = await res.json();
+
+  const topicButtonsContainer = document.createElement('div');
+  topicButtonsContainer.className = 'grid';
+
+  const topicContent = document.createElement('div');
+  topicContent.className = 'section';
+
+  topics.forEach(topic => {
+    const button = document.createElement('div');
+    button.className = 'card';
+    button.innerHTML = `<div class="card-title">${topic.name}</div>`;
+    button.onclick = () => {
+      topicButtonsContainer.style.display = 'none';
+
+      const tabs = `
+        <div style="display: flex; justify-content: center; gap: 1rem; margin-bottom: 1rem;">
+          <button class="btn" onclick="switchTab('lectures')">Lectures</button>
+          <button class="btn" onclick="switchTab('notes')">Notes</button>
+          <button class="btn" onclick="switchTab('dpps')">DPPs</button>
+        </div>
+      `;
+
+      topicContent.innerHTML = `<h2>${topic.name}</h2>` + tabs;
+
+      const lecturesHtml = (topic.lectures || []).map(lecture => `
+        <div style="margin-bottom: 2rem;">
+          <a href="video.php?videoUrl=${encodeURIComponent(lecture.videoUrl)}&title=${encodeURIComponent(lecture.title)}">
+            <img src="${lecture.thumbnail}" style="width:100%; max-width:400px; border-radius:10px; display:block; margin:1rem auto;" />
+          </a>
+          <div style="text-align:center;">${lecture.title}</div>
+          ${(lecture.notes || []).map(note => `<div style="margin-top: 0.5rem;"><a href="${note.fileUrl}" target="_blank" class="btn">${note.title}</a></div>`).join('')}
+          ${(lecture.dpps || []).map(dpp => `<div style="margin-top: 0.5rem;"><a href="${dpp.fileUrl}" target="_blank" class="btn">${dpp.title}</a></div>`).join('')}
+        </div>
+      `).join('');
+
+      const notesHtml = (topic.notes || []).map(note => `<div style="margin-top: 1rem;"><a href="${note.fileUrl}" target="_blank" class="btn">${note.title}</a></div>`).join('');
+      const dppsHtml = (topic.dpps || []).map(dpp => `<div style="margin-top: 1rem;"><a href="${dpp.fileUrl}" target="_blank" class="btn">${dpp.title}</a></div>`).join('');
+
+      topicContent.innerHTML += `
+        <div id="lecturesTab">${lecturesHtml}</div>
+        <div id="notesTab" style="display:none;">${notesHtml}</div>
+        <div id="dppsTab" style="display:none;">${dppsHtml}</div>
+      `;
+
+      window.switchTab = function(tabName) {
+        document.getElementById('lecturesTab').style.display = tabName === 'lectures' ? 'block' : 'none';
+        document.getElementById('notesTab').style.display = tabName === 'notes' ? 'block' : 'none';
+        document.getElementById('dppsTab').style.display = tabName === 'dpps' ? 'block' : 'none';
+      };
+    };
+    topicButtonsContainer.appendChild(button);
+  });
+
+  topicsDiv.appendChild(topicButtonsContainer);
+  topicsDiv.appendChild(topicContent);
+  document.getElementById('topicLoader').classList.add('hidden');
+}
+
+document.getElementById('searchInput').addEventListener('input', function () {
+  const searchTerm = this.value.toLowerCase();
+  const cards = main.getElementsByClassName('card');
+  Array.from(cards).forEach(card => {
+    const title = card.querySelector('.card-title').textContent.toLowerCase();
+    card.style.display = title.includes(searchTerm) ? '' : 'none';
+  });
+});
+
+window.addEventListener('scroll', () => {
+  if (currentView !== 'main' || isLoading) return;
+
+  if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 300) {
+    document.getElementById('batchLoader').classList.remove('hidden');
+    renderBatches();
+  }
+});
+
+loadBatches();
+
+// Disable right-click
+document.addEventListener('contextmenu', event => event.preventDefault());
+
+// Detect DevTools and redirect
+(function () {
+  const devtools = { open: false };
+  const threshold = 160;
+  const redirectURL = "https://www.google.com";
+
+  function detectDevTools() {
+    const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+    const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+
+    if (widthThreshold || heightThreshold) {
+      if (!devtools.open) {
+        devtools.open = true;
+        window.location.href = redirectURL;
       }
-
-      const subjects = batch.subjects;
-
-      document.getElementById('subjectLoader').classList.add('hidden');
-      subjects.forEach(subject => {
-        const div = document.createElement('div');
-        div.className = 'card';
-        div.innerHTML = `<div class="card-title">${subject.name}</div>`;
-        div.onclick = () => {
-          prevState.push(currentView);
-          loadTopics(batchId, subject.key);
-        };
-        subjectsDiv.appendChild(div);
-      });
+    } else {
+      devtools.open = false;
     }
+  }
 
-    async function loadTopics(batchId, subjectId) {
-      document.getElementById('topicLoader').classList.remove('hidden');
-      showView('topics');
-      topicsDiv.innerHTML = '';
+  setInterval(detectDevTools, 1000);
+})();
+</script>
 
-      const subject = jsonData.batches[batchId].subjects.find(s => s.key === subjectId);
-      if (!subject || !subject.topics) {
-        topicsDiv.innerHTML = '<p>No topics found for this subject.</p>';
-        return;
-      }
+<!-- Updated Popup -->
+<div id="popup" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: #1e2036; color: white; padding: 20px; box-shadow: 0 0 20px #ffc10766; z-index: 9999; width: 320px; border-radius: 12px; text-align: center;">
+  <button onclick="document.getElementById('popup').style.display='none'" 
+    style="position: absolute; top: 5px; right: 10px; background: transparent; border: none; font-size: 20px; color: white;">&times;</button>
+  <img id="popupImage" src="" alt="Popup Image" style="max-width: 100%; height: auto; border-radius: 8px;">
+  <p id="popupText" style="margin: 15px 0;"></p>
+  <a id="popupLink" href="#" target="_blank" 
+     style="display: inline-block; padding: 10px 15px; background-color: #ffc107; color: #111; font-weight: bold; text-decoration: none; border-radius: 5px;">
+     Join Telegram
+  </a>
+</div>
 
-      const topics = subject.topics;
-      const topicButtonsContainer = document.createElement('div');
-      topicButtonsContainer.className = 'grid';
-      const topicContent = document.createElement('div');
-      topicContent.className = 'section';
-
-      topics.forEach(topic => {
-        const button = document.createElement('div');
-        button.className = 'card';
-        button.innerHTML = `<div class="card-title">${topic.name}</div>`;
-        button.onclick = () => {
-          topicButtonsContainer.style.display = 'none';
-
-          const tabs = `
-            <div style="display: flex; justify-content: center; gap: 1rem; margin-bottom: 1rem;">
-              <button class="btn" onclick="switchTab('lectures')">Lectures</button>
-              <button class="btn" onclick="switchTab('notes')">Notes</button>
-              <button class="btn" onclick="switchTab('dpps')">DPPs</button>
-            </div>
-          `;
-
-          topicContent.innerHTML = `<h2>${topic.name}</h2>` + tabs;
-
-          const lecturesHtml = (topic.lectures || []).map(lecture => `
-            <div style="margin-bottom: 2rem;">
-              <a href="video.php?videoUrl=${encodeURIComponent(lecture.videoUrl)}&title=${encodeURIComponent(lecture.title)}">
-                <img src="${lecture.thumbnail}" style="width:100%; max-width:400px; border-radius:10px; display:block; margin:1rem auto;" />
-              </a>
-              <div style="text-align:center;">${lecture.title}</div>
-              ${(lecture.notes || []).map(note => `<div style="margin-top: 0.5rem;"><a href="${note.fileUrl}" target="_blank" class="btn">${note.title}</a></div>`).join('')}
-              ${(lecture.dpps || []).map(dpp => `<div style="margin-top: 0.5rem;"><a href="${dpp.fileUrl}" target="_blank" class="btn">${dpp.title}</a></div>`).join('')}
-            </div>
-          `).join('');
-
-          const notesHtml = (topic.notes || []).map(note => `<div style="margin-top: 1rem;"><a href="${note.fileUrl}" target="_blank" class="btn">${note.title}</a></div>`).join('');
-          const dppsHtml = (topic.dpps || []).map(dpp => `<div style="margin-top: 1rem;"><a href="${dpp.fileUrl}" target="_blank" class="btn">${dpp.title}</a></div>`).join('');
-
-          topicContent.innerHTML += `
-            <div id="lecturesTab">${lecturesHtml}</div>
-            <div id="notesTab" style="display:none;">${notesHtml}</div>
-            <div id="dppsTab" style="display:none;">${dppsHtml}</div>
-          `;
-
-          window.switchTab = function(tabName) {
-            document.getElementById('lecturesTab').style.display = tabName === 'lectures' ? 'block' : 'none';
-            document.getElementById('notesTab').style.display = tabName === 'notes' ? 'block' : 'none';
-            document.getElementById('dppsTab').style.display = tabName === 'dpps' ? 'block' : 'none';
-          };
-        };
-        topicButtonsContainer.appendChild(button);
-      });
-
-      topicsDiv.appendChild(topicButtonsContainer);
-      topicsDiv.appendChild(topicContent);
-      document.getElementById('topicLoader').classList.add('hidden');
+<script>
+fetch('https://physicswallahapi.onrender.com/api/batches')
+  .then(response => response.json())
+  .then(data => {
+    if (data.popup && data.popup.show) {
+      document.getElementById('popupImage').src = data.popup.image;
+      document.getElementById('popupText').textContent = data.popup.text;
+      document.getElementById('popupLink').href = data.popup.link;
+      document.getElementById('popup').style.display = 'block';
     }
+  })
+  .catch(error => console.error('Error loading popup data:', error));
+</script>
 
-    document.getElementById('searchInput').addEventListener('input', function () {
-      const searchTerm = this.value.toLowerCase();
-      const cards = main.getElementsByClassName('card');
-      Array.from(cards).forEach(card => {
-        const title = card.querySelector('.card-title').textContent.toLowerCase();
-        card.style.display = title.includes(searchTerm) ? '' : 'none';
-      });
-    });
-
-    window.addEventListener('scroll', () => {
-      if (currentView !== 'main' || isLoading) return;
-      if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 300) {
-        document.getElementById('batchLoader').classList.remove('hidden');
-        renderBatches();
-      }
-    });
-
-    loadBatches();
-  </script>
 </body>
 </html>
